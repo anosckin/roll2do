@@ -28,7 +28,6 @@ struct Settings: Sendable, Equatable {
 
 extension Settings: PersistableSingleton {
     static let entityName = "CDSettings"
-    static let singletonId = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
     static let defaultValue = Settings.default
 
     static func map(_ cd: CDSettings) -> Settings {
