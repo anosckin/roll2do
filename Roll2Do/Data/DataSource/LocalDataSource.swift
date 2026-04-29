@@ -16,11 +16,11 @@ protocol LocalDataSourceProtocol: Actor {
 
     // Generic singleton API (one row, fixed UUID, default on empty)
     func getSingleton<T: PersistableSingleton>(_: T.Type) async -> T
-    func setSingleton<T: PersistableSingleton>(_ value: T) async throws
+    func setSingleton(_ value: some PersistableSingleton) async throws
     func observeSingleton<T: PersistableSingleton>(_: T.Type) -> AsyncStream<T>
 
-    /// Tasks (entity-specific predicate)
-    func isTaskNameTaken(_ name: String, excluding id: UUID?) async -> Bool
+    /// Generic predicate-based existence check
+    func exists<T: PersistableModel>(_: T.Type, matching query: Query<T>) async -> Bool
 }
 
 actor LocalDataSource: LocalDataSourceProtocol {
@@ -240,22 +240,13 @@ actor LocalDataSource: LocalDataSourceProtocol {
         return T.defaultValue
     }
 
-    // MARK: - Tasks (entity-specific)
+    // MARK: - Generic predicate-based existence check
 
-    func isTaskNameTaken(_ name: String, excluding id: UUID?) async -> Bool {
+    func exists<T: PersistableModel>(_: T.Type, matching query: Query<T>) async -> Bool {
         await withCheckedContinuation { continuation in
             context.perform { [context] in
-                let request = CDTaskItem.fetchRequest()
-                let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                if let id {
-                    request.predicate = NSPredicate(
-                        format: "name ==[c] %@ AND id != %@",
-                        trimmed,
-                        id as CVarArg
-                    )
-                } else {
-                    request.predicate = NSPredicate(format: "name ==[c] %@", trimmed)
-                }
+                let request = NSFetchRequest<T.CDEntity>(entityName: T.entityName)
+                request.predicate = query.toNSPredicate()
                 request.fetchLimit = 1
                 let count = (try? context.count(for: request)) ?? 0
                 continuation.resume(returning: count > 0)

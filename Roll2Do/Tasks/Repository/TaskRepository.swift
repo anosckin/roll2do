@@ -30,7 +30,12 @@ struct TaskRepository: TaskRepositoryProtocol {
     }
 
     func isNameTaken(_ name: String, excluding id: UUID?) async -> Bool {
-        await local.isTaskNameTaken(name, excluding: id)
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        var conditions: [QueryCondition] = [.equalIgnoringCase(field: "name", value: trimmed)]
+        if let id {
+            conditions.append(.notEqual(field: "id", value: .uuid(id)))
+        }
+        return await local.exists(TaskItem.self, matching: Query(conditions))
     }
 
     func save(_ item: TaskItem) async throws {
