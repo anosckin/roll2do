@@ -14,10 +14,15 @@ protocol LocalDataSourceProtocol: Actor {
     func observeAll<T: PersistableModel>(_: T.Type, sortedBy key: String, ascending: Bool) -> AsyncStream<[T]>
     func observe<T: PersistableModel>(_: T.Type, id: UUID) -> AsyncStream<T>
 
-    // Generic singleton API (one row, fixed UUID, default on empty)
+    // Generic singleton API (one row, fixed UUID).
+    // `getSingleton` / `observeSingleton` coalesce missing rows to `T.defaultValue`.
+    // The `IfPresent` variants surface absence as `nil`, for singletons where
+    // "absent" is a meaningful state (e.g. no signed-in user).
     func getSingleton<T: PersistableSingleton>(_: T.Type) async -> T
+    func getSingletonIfPresent<T: PersistableSingleton>(_: T.Type) async -> T?
     func setSingleton(_ value: some PersistableSingleton) async throws
     func observeSingleton<T: PersistableSingleton>(_: T.Type) -> AsyncStream<T>
+    func observeSingletonIfPresent<T: PersistableSingleton>(_: T.Type) -> AsyncStream<T?>
 
     /// Generic predicate-based existence check
     func exists<T: PersistableModel>(_: T.Type, matching query: Query<T>) async -> Bool
@@ -176,9 +181,17 @@ actor LocalDataSource: LocalDataSourceProtocol {
     // MARK: - Generic singleton API
 
     func getSingleton<T: PersistableSingleton>(_: T.Type) async -> T {
+        await getSingletonIfPresent(T.self) ?? T.defaultValue
+    }
+
+    func getSingletonIfPresent<T: PersistableSingleton>(_: T.Type) async -> T? {
         await withCheckedContinuation { continuation in
             context.perform { [context] in
-                continuation.resume(returning: Self.fetchOrCreateSingleton(T.self, in: context))
+                let request = NSFetchRequest<T.CDEntity>(entityName: T.entityName)
+                request.predicate = NSPredicate(format: "id == %@", T.singletonId as CVarArg)
+                request.fetchLimit = 1
+                let cd = (try? context.fetch(request))?.first
+                continuation.resume(returning: cd.map(T.map))
             }
         }
     }
@@ -207,37 +220,22 @@ actor LocalDataSource: LocalDataSourceProtocol {
         AsyncStream { continuation in
             let observer = SingletonObserver<T>(
                 context: context,
-                onUpdate: { value in continuation.yield(value) }
+                onUpdate: { value in continuation.yield(value ?? T.defaultValue) }
             )
             observer.start()
             continuation.onTermination = { _ in observer.detach() }
         }
     }
 
-    /// Self-healing fetch: returns the singleton row by fixed id; creates the
-    /// default if missing; deletes any extra rows that drifted in (e.g. from a
-    /// CloudKit merge or old data) so there's exactly one row going forward.
-    fileprivate static func fetchOrCreateSingleton<T: PersistableSingleton>(
-        _: T.Type,
-        in context: NSManagedObjectContext
-    ) -> T {
-        let request = NSFetchRequest<T.CDEntity>(entityName: T.entityName)
-        let rows = (try? context.fetch(request)) ?? []
-        // Self-heal: prefer the row with the canonical id; delete all others.
-        let canonical = rows.first { ($0.value(forKey: "id") as? UUID) == T.singletonId }
-        let extras = rows.filter { $0 !== canonical }
-        if !extras.isEmpty {
-            extras.forEach(context.delete)
-            try? context.save()
+    nonisolated func observeSingletonIfPresent<T: PersistableSingleton>(_: T.Type) -> AsyncStream<T?> {
+        AsyncStream { continuation in
+            let observer = SingletonObserver<T>(
+                context: context,
+                onUpdate: { value in continuation.yield(value) }
+            )
+            observer.start()
+            continuation.onTermination = { _ in observer.detach() }
         }
-        if let canonical {
-            return T.map(canonical)
-        }
-        // None existed — create default.
-        let cd = T.CDEntity(context: context)
-        T.apply(T.defaultValue, to: cd)
-        try? context.save()
-        return T.defaultValue
     }
 
     // MARK: - Generic predicate-based existence check
@@ -316,9 +314,9 @@ private final class FRCObserver<T: PersistableModel>: NSObject, NSFetchedResults
 private final class SingletonObserver<T: PersistableSingleton>: NSObject, NSFetchedResultsControllerDelegate, @unchecked Sendable {
     private let frc: NSFetchedResultsController<T.CDEntity>
     private let context: NSManagedObjectContext
-    private let onUpdate: @Sendable (T) -> Void
+    private let onUpdate: @Sendable (T?) -> Void
 
-    init(context: NSManagedObjectContext, onUpdate: @escaping @Sendable (T) -> Void) {
+    init(context: NSManagedObjectContext, onUpdate: @escaping @Sendable (T?) -> Void) {
         self.context = context
         let request = NSFetchRequest<T.CDEntity>(entityName: T.entityName)
         request.predicate = NSPredicate(format: "id == %@", T.singletonId as CVarArg)
@@ -339,9 +337,7 @@ private final class SingletonObserver<T: PersistableSingleton>: NSObject, NSFetc
     func start() {
         context.perform {
             try? self.frc.performFetch()
-            // Emit current value or create default; subsequent emissions come via the delegate.
-            let value = LocalDataSource.fetchOrCreateSingleton(T.self, in: self.context)
-            self.onUpdate(value)
+            self.emit()
         }
     }
 
@@ -352,8 +348,10 @@ private final class SingletonObserver<T: PersistableSingleton>: NSObject, NSFetc
     }
 
     nonisolated func controllerDidChangeContent(_: NSFetchedResultsController<NSFetchRequestResult>) {
-        if let cd = frc.fetchedObjects?.first {
-            onUpdate(T.map(cd))
-        }
+        emit()
+    }
+
+    private func emit() {
+        onUpdate(frc.fetchedObjects?.first.map(T.map))
     }
 }
