@@ -2,7 +2,7 @@ import Foundation
 
 /// AsyncStream is used over Combine to keep a single concurrency paradigm
 /// (async/await + actors) throughout the codebase, with no framework dependency.
-struct AuthEvent: Sendable {
+struct AuthEvent {
     let user: User?
     let isLoggingIn: Bool
 }
@@ -11,7 +11,8 @@ protocol AuthManagerProtocol: Actor {
     func subscribe() -> AsyncStream<AuthEvent>
     func currentUser() async -> User?
     func restoreSession() async
-    func signIn(email: String) async
+    func signIn(email: String, password: String) async throws
+    func signUp(email: String, password: String) async throws
     func signOut() async
 }
 
@@ -48,17 +49,30 @@ actor AuthManager: AuthManagerProtocol {
         broadcast(AuthEvent(user: restored, isLoggingIn: false))
     }
 
-    func signIn(email: String) async {
-        broadcast(AuthEvent(user: user, isLoggingIn: true))
-        let signedIn = try? await repository.signIn(email: email)
-        user = signedIn
-        broadcast(AuthEvent(user: signedIn, isLoggingIn: false))
+    func signIn(email: String, password: String) async throws {
+        try await perform { try await repository.signIn(email: email, password: password) }
+    }
+
+    func signUp(email: String, password: String) async throws {
+        try await perform { try await repository.signUp(email: email, password: password) }
     }
 
     func signOut() async {
-        await repository.signOut()
+        try? await repository.signOut()
         user = nil
         broadcast(AuthEvent(user: nil, isLoggingIn: false))
+    }
+
+    private func perform(_ action: () async throws -> User) async throws {
+        broadcast(AuthEvent(user: user, isLoggingIn: true))
+        do {
+            let newUser = try await action()
+            user = newUser
+            broadcast(AuthEvent(user: newUser, isLoggingIn: false))
+        } catch {
+            broadcast(AuthEvent(user: user, isLoggingIn: false))
+            throw error
+        }
     }
 
     private func broadcast(_ event: AuthEvent) {

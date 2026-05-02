@@ -39,13 +39,4 @@
             </uniquenessConstraint>
         </uniquenessConstraints>
     </entity>
-    <entity name="CDUser" representedClassName=".CDUser" syncable="YES">
-        <attribute name="email" attributeType="String"/>
-        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="id"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
-    </entity>
 </model>
