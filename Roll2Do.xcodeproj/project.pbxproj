@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4AA687892FA6067800F8C3D5 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 4AA687882FA6067800F8C3D5 /* FirebaseAuth */; };
+		4AA6878B2FA60AB300F8C3D5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4AA6878A2FA60AB300F8C3D5 /* GoogleService-Info.plist */; };
+		4AA6878C2FA60AB300F8C3D5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4AA6878A2FA60AB300F8C3D5 /* GoogleService-Info.plist */; };
+		4AA6878D2FA60AB300F8C3D5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4AA6878A2FA60AB300F8C3D5 /* GoogleService-Info.plist */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		4A72D4542F2E7C80007965BA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +34,7 @@
 		4A72D43D2F2E7C7E007965BA /* Roll2Do.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Roll2Do.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A72D4532F2E7C80007965BA /* Roll2DoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Roll2DoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4A72D45D2F2E7C80007965BA /* Roll2DoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Roll2DoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4AA6878A2FA60AB300F8C3D5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4AA687892FA6067800F8C3D5 /* FirebaseAuth in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,6 +97,7 @@
 		4A72D4342F2E7C7E007965BA = {
 			isa = PBXGroup;
 			children = (
+				4AA6878A2FA60AB300F8C3D5 /* GoogleService-Info.plist */,
 				4A72D43F2F2E7C7E007965BA /* Roll2Do */,
 				4A72D4562F2E7C80007965BA /* Roll2DoTests */,
 				4A72D4602F2E7C80007965BA /* Roll2DoUITests */,
@@ -125,6 +135,7 @@
 			);
 			name = Roll2Do;
 			packageProductDependencies = (
+				4AA687882FA6067800F8C3D5 /* FirebaseAuth */,
 			);
 			productName = Roll2Do;
 			productReference = 4A72D43D2F2E7C7E007965BA /* Roll2Do.app */;
@@ -208,6 +219,9 @@
 			);
 			mainGroup = 4A72D4342F2E7C7E007965BA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4AA687872FA6067800F8C3D5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4A72D43E2F2E7C7E007965BA /* Products */;
 			projectDirPath = "";
@@ -225,6 +239,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4AA6878C2FA60AB300F8C3D5 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +247,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4AA6878B2FA60AB300F8C3D5 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,6 +255,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4AA6878D2FA60AB300F8C3D5 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -301,6 +318,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.nikasalia.Roll2Do;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -335,6 +353,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = com.nikasalia.Roll2Do;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -595,6 +614,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4AA687872FA6067800F8C3D5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4AA687882FA6067800F8C3D5 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4AA687872FA6067800F8C3D5 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4A72D4352F2E7C7E007965BA /* Project object */;
 }

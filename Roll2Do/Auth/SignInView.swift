@@ -12,6 +12,9 @@ struct SignInView: View {
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+
+                    SecureField("Password", text: $viewModel.passwordInput)
+                        .textContentType(viewModel.mode == .signIn ? .password : .newPassword)
                 } footer: {
                     if let message = viewModel.errorMessage {
                         Text(message)
@@ -21,23 +24,32 @@ struct SignInView: View {
 
                 Section {
                     Button {
-                        Task { await viewModel.signIn() }
+                        Task { await viewModel.submit() }
                     } label: {
                         HStack {
                             Spacer()
                             if viewModel.isSubmitting {
                                 ProgressView()
                             } else {
-                                Text("Sign In")
+                                Text(viewModel.primaryButtonTitle)
                                     .fontWeight(.semibold)
                             }
                             Spacer()
                         }
+                        .foregroundStyle(.primary)
                     }
                     .disabled(!viewModel.canSubmit)
                 }
+
+                Section {
+                    Button(viewModel.toggleButtonTitle) {
+                        viewModel.toggleMode()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(.primary)
+                }
             }
-            .navigationTitle("Welcome")
+            .navigationTitle(viewModel.mode == .signIn ? "Welcome" : "Create Account")
             .navigationBarTitleDisplayMode(.inline)
             .task { await viewModel.observeAuth() }
         }
